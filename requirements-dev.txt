@@ -1,0 +1,4 @@
+# Everything to run the Week 7 tests, levers and the exec one-pager builder.
+-r api/requirements-dev.txt
+PyYAML==6.0.3
+reportlab==5.0.1

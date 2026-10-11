@@ -2,6 +2,7 @@
 # Real path: gpt-4o-mini returning JSON we validate like any other input.
 # Stub path: the course's keyword model, same shape, no cost (tests and fallback).
 import os
+import time
 from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
@@ -37,7 +38,13 @@ def _red_flag(message: str) -> bool:
     return any(word in text for word in URGENT_WORDS)
 
 
+# Load tests only: make the free stub as slow as a real model call (measured p50 ~1,000 ms).
+STUB_LATENCY_MS = int(os.getenv("STUB_LATENCY_MS", "0"))
+
+
 def _stub(message: str) -> TriageResult:
+    if STUB_LATENCY_MS:
+        time.sleep(STUB_LATENCY_MS / 1000)
     if _red_flag(message):
         return TriageResult(urgency="high", advice="Please go to the nearest clinic now.")
     return TriageResult(urgency="low", advice="Rest, drink fluids, and monitor your symptoms.")
