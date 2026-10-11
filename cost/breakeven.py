@@ -23,6 +23,7 @@ GPU_OPTIONS = {                       # USD per hour, on-demand, checked 2026-10
 PEOPLE_ONCALL_MONTHLY = 400.0         # [A] GPU patching, vLLM upgrades, capacity: the course's honest line
 STORAGE_OBS_MONTHLY = 50.0            # [A] model weights, images, GPU metrics
 SELFHOST_VAR_PER_REQ = 0.000005       # [A] egress/energy proxy, not zero
+GPT4O_PRICE_MULTIPLE = 16.7           # gpt-4o list price / gpt-4o-mini, on both columns [1]
 
 
 def break_even(api_per_req: float, fixed: float, var: float = SELFHOST_VAR_PER_REQ) -> float:
@@ -45,12 +46,20 @@ def main() -> None:
         rows.append({"option": name, "gpu_usd_per_h": per_h, "fixed_usd_month": round(fixed, 2),
                      "break_even_requests_month": round(n),
                      "break_even_if_people_cost_zero": round(free_people),
+                     # what-ifs the memo cites: a second GPU for redundancy, and gpt-4o prices
+                     "break_even_two_gpus": round(break_even(api_per_req, fixed + per_h * cm.HOURS_PER_MONTH)),
+                     "break_even_at_gpt4o_price": round(break_even(api_per_req * GPT4O_PRICE_MULTIPLE, fixed)),
                      "multiple_of_baseline_volume": round(n / volume)})
         print(f"{name:66} {fixed:>10,.0f} {n:>21,.0f} {n / volume:>11,.0f}x")
     cheapest = min(rows, key=lambda r: r["break_even_requests_month"])
     print(f"\nEven the cheapest option needs {cheapest['break_even_requests_month']:,} requests a month "
           f"({cheapest['multiple_of_baseline_volume']:,}x today). With on-call priced at $0 (dishonest) "
           f"it would still need {cheapest['break_even_if_people_cost_zero']:,}.")
+    print("\nWhat-ifs (requests/month):")
+    for r in rows:
+        print(f"  {r['option'][:44]:44} two GPUs: {r['break_even_two_gpus']:>12,}   "
+              f"if we paid gpt-4o prices: {r['break_even_at_gpt4o_price']:>10,} "
+              f"({r['break_even_at_gpt4o_price'] / volume:,.0f}x today)")
     out = {"api_usd_per_request": api_per_req, "baseline_requests_month": volume,
            "people_oncall_monthly": PEOPLE_ONCALL_MONTHLY, "storage_obs_monthly": STORAGE_OBS_MONTHLY,
            "selfhost_var_per_req": SELFHOST_VAR_PER_REQ, "options": rows}

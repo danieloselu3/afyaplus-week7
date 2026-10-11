@@ -11,6 +11,8 @@
       "fixed_usd_month": 3860.56,
       "break_even_requests_month": 120173074,
       "break_even_if_people_cost_zero": 107721712,
+      "break_even_two_gpus": 226338366,
+      "break_even_at_gpt4o_price": 6277461,
       "multiple_of_baseline_volume": 2003
     },
     {
@@ -19,6 +21,8 @@
       "fixed_usd_month": 2786.0,
       "break_even_requests_month": 86723735,
       "break_even_if_people_cost_zero": 74272374,
+      "break_even_two_gpus": 159439689,
+      "break_even_at_gpt4o_price": 4530173,
       "multiple_of_baseline_volume": 1445
     },
     {
@@ -27,6 +31,8 @@
       "fixed_usd_month": 833.98,
       "break_even_requests_month": 25960467,
       "break_even_if_people_cost_zero": 13509105,
+      "break_even_two_gpus": 37913152,
+      "break_even_at_gpt4o_price": 1356093,
       "multiple_of_baseline_volume": 433
     },
     {
@@ -35,6 +41,8 @@
       "fixed_usd_month": 1019.4,
       "break_even_requests_month": 31732296,
       "break_even_if_people_cost_zero": 19280934,
+      "break_even_two_gpus": 49456809,
+      "break_even_at_gpt4o_price": 1657595,
       "multiple_of_baseline_volume": 529
     }
   ]
