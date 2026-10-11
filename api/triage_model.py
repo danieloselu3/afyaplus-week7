@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
-from config import OPENAI_MODEL, TRIAGE_BACKEND
+from config import LLM_BASE_URL, OPENAI_MODEL, TRIAGE_BACKEND
 
 # Safety floor: these words always mean "high", whatever the model says.
 URGENT_WORDS = ["chest pain", "bleeding", "unconscious", "cannot breathe",
@@ -50,7 +50,9 @@ def _openai(message: str, county: str) -> tuple[TriageResult, dict]:
     global _client
     from openai import OpenAI            # imported lazily so the stub path needs no key
     if _client is None:
-        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=20, max_retries=1)
+        # max_retries=1: a sane client, never a retry storm (see cost/retry_storm.py)
+        _client = OpenAI(api_key=os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY"),
+                         base_url=LLM_BASE_URL, timeout=20, max_retries=1)
     response = _client.chat.completions.create(
         model=OPENAI_MODEL,
         temperature=0,

@@ -23,7 +23,8 @@ def test_health_is_open_and_reports_version():
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json() == {"service": "triage-api", "version": VERSION, "status": "ok",
-                        "model_backend": "stub"}
+                        "model_backend": "stub", "model": "gpt-4o-mini",
+                        "llm_endpoint": "api.openai.com", "cache": "memory"}
 
 
 def test_token_then_triage_200():
