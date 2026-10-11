@@ -90,6 +90,12 @@ def cached_triage(model_fn, message: str, county: str) -> tuple[dict, str]:
     return result, "MISS"
 
 
+def lookup(message: str, county: str) -> dict | None:
+    """Read-only peek for other paths (the overnight batch worker). Never writes, so
+    answers produced elsewhere can never leak into what live /triage serves."""
+    return _get(make_key(message, county)) if CACHE_ENABLED else None
+
+
 def hit_rate() -> float:
     total = metrics["hits"] + metrics["misses"]
     return metrics["hits"] / total if total else 0.0
