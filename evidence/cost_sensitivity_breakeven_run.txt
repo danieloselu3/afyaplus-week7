@@ -57,3 +57,9 @@ Azure NC4as T4 v3, East US [2] (16 GB: 8B model only if 4-bit)            834   
 vast.ai RTX 4090, Week 4 measured [4] (no SLA, not production)          1,019            31,732,296         529x
 
 Even the cheapest option needs 25,960,467 requests a month (433x today). With on-call priced at $0 (dishonest) it would still need 13,509,105.
+
+What-ifs (requests/month):
+  Azure NV36ads A10 v5, South Africa North [2] two GPUs:  226,338,366   if we paid gpt-4o prices:  6,277,461 (105x today)
+  Azure NV36ads A10 v5, East US [2]            two GPUs:  159,439,689   if we paid gpt-4o prices:  4,530,173 (76x today)
+  Azure NC4as T4 v3, East US [2] (16 GB: 8B mo two GPUs:   37,913,152   if we paid gpt-4o prices:  1,356,093 (23x today)
+  vast.ai RTX 4090, Week 4 measured [4] (no SL two GPUs:   49,456,809   if we paid gpt-4o prices:  1,657,595 (28x today)
