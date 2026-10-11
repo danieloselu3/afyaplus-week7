@@ -9,7 +9,7 @@ os.environ["LOG_DIR"] = tempfile.mkdtemp(prefix="afyaplus-test-logs-")
 os.environ["JWT_SECRET"] = "test-secret-" + "x" * 40
 os.environ["REDIS_URL"] = ""
 ROOT = Path(__file__).resolve().parent.parent
-for sub in ("api", "levers", "cost"):
+for sub in ("api", "levers", "cost", "deploy"):
     sys.path.insert(0, str(ROOT / sub))
 
 import pytest  # noqa: E402

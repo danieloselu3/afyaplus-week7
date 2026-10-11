@@ -28,6 +28,8 @@ x-triage: &triage
     LLM_BASE_URL: ${LLM_BASE_URL:-}      # empty = api.openai.com; any OpenAI-compatible URL works
     LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
     TRIAGE_RATE_LIMIT_PER_MIN: ${TRIAGE_RATE_LIMIT_PER_MIN:-30}
+    TRIAGE_BACKEND: ${TRIAGE_BACKEND:-openai}   # stub = free load tests
+    STUB_LATENCY_MS: ${STUB_LATENCY_MS:-0}
     COST_CENTER: clinical-ai
   depends_on:
     redis:
