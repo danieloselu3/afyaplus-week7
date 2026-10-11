@@ -1,11 +1,14 @@
 # triage_api.py - the secured AfyaPlus triage service
 from typing import Literal
+from urllib.parse import urlparse
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from auth import auth_router, require_role
-from config import TRIAGE_BACKEND, VERSION, get_logger
+import response_cache
+from config import (CACHE_ENABLED, LLM_BASE_URL, OPENAI_MODEL, TRIAGE_BACKEND,
+                    TRIAGE_RATE_LIMIT_PER_MIN, VERSION, get_logger)
 from observability import add_request_logging
 from rate_limit import check_rate_limit
 from triage_model import ModelUnavailable, triage_model
@@ -42,6 +45,9 @@ class HealthResponse(BaseModel):
     version: str
     status: Literal["ok"]
     model_backend: str
+    model: str
+    llm_endpoint: str        # host only: proves the endpoint switch without leaking keys
+    cache: str               # redis | memory | off
 
 
 def write_audit_line(trace_id: str, username: str, county: str, urgency: str) -> None:
@@ -54,25 +60,32 @@ def write_audit_line(trace_id: str, username: str, county: str, urgency: str) ->
 @app.get("/health", response_model=HealthResponse)
 def health():
     """Unprotected liveness probe for load balancers and Kubernetes."""
-    return {"service": SERVICE, "version": VERSION, "status": "ok", "model_backend": TRIAGE_BACKEND}
+    return {"service": SERVICE, "version": VERSION, "status": "ok", "model_backend": TRIAGE_BACKEND,
+            "model": OPENAI_MODEL,
+            "llm_endpoint": urlparse(LLM_BASE_URL).netloc if LLM_BASE_URL else "api.openai.com",
+            "cache": response_cache.backend() if CACHE_ENABLED else "off"}
 
 
 @app.post("/triage", response_model=TriageResponse,
           responses={401: {"description": "Missing, invalid or expired token"},
                      403: {"description": "Authenticated, but role is not coordinator"},
-                     429: {"description": "More than 5 triage calls per minute"},
+                     429: {"description": "Over TRIAGE_RATE_LIMIT_PER_MIN calls a minute"},
                      503: {"description": "The AI model is unavailable"}})
-def triage(body: TriageRequest, request: Request, background: BackgroundTasks,
+def triage(body: TriageRequest, request: Request, response: Response, background: BackgroundTasks,
            user: dict = Depends(require_role("coordinator"))):
-    check_rate_limit(f"triage:{user['sub']}", max_requests=5)
+    check_rate_limit(f"triage:{user['sub']}", max_requests=TRIAGE_RATE_LIMIT_PER_MIN)
     trace_id = request.state.trace_id
     try:
-        result = triage_model(body.patient_message, body.county)
+        result, cache_status = response_cache.cached_triage(
+            triage_model, body.patient_message, body.county)
     except ModelUnavailable as exc:
         log.error("trace=%s model_error=%s", trace_id, exc)
         raise HTTPException(status_code=503, detail="The AI model is unavailable. Try again shortly.")
-    log.info("trace=%s model=%s tokens_in=%s tokens_out=%s",
-             trace_id, result["model_used"], result["tokens_in"], result["tokens_out"])
+    billed = cache_status != "HIT"       # a HIT costs no tokens: that is the whole lever
+    log.info("trace=%s model=%s cache=%s tokens_in=%s tokens_out=%s",
+             trace_id, result["model_used"], cache_status,
+             result["tokens_in"] if billed else 0, result["tokens_out"] if billed else 0)
+    response.headers["X-Cache"] = cache_status
     background.add_task(write_audit_line, trace_id, user["sub"], body.county, result["urgency"])
     return TriageResponse(urgency=result["urgency"], advice=result["advice"],
                           model_used=result["model_used"], handled_for=user["sub"],

@@ -20,7 +20,7 @@ RUN pip install -r requirements.txt
 RUN useradd --create-home --uid 10001 afya && mkdir -p /app/logs && chown afya /app/logs
 
 # 3. Code last: editing Python only rebuilds from here down
-COPY config.py auth.py rate_limit.py observability.py triage_model.py triage_api.py ./
+COPY config.py auth.py rate_limit.py observability.py triage_model.py response_cache.py triage_api.py ./
 
 USER afya
 
@@ -28,6 +28,11 @@ USER afya
 # unless JWT_SECRET is injected at runtime with --env-file / env_file.
 ENV APP_ENV=production \
     LOG_DIR=/app/logs
+
+# FinOps labels travel with the image; deploy/docker-compose.cost.yml repeats them per container.
+LABEL afyaplus.service="triage-api" \
+      afyaplus.version="1.2.0" \
+      afyaplus.cost-center="clinical-ai"
 
 EXPOSE 8000
 
